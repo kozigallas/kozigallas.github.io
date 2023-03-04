@@ -1,1 +1,0 @@
-# kozigallas.github.io
