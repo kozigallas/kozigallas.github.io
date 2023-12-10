@@ -1,1 +1,155 @@
-Hello World!
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>KÖZIGÁLLÁS</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        #panelDescription {
+            height: 500px;
+            overflow-y: scroll;
+        }
+        #example tbody tr {
+            cursor: pointer;
+            height: 64px;
+        }
+
+        .highlighted {
+            background-color: rgb(206, 206, 234); 
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid mx-5">
+        <a class="navbar-brand" href="/">Közigállás</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          </ul>
+          <!--<form class="d-flex" role="search">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+          </form>-->
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid my-5">
+        <div class="row  mx-5">
+            <div class="col-lg-6">
+                <table id="example" class="table table-striped" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Munkáltató neve</th>
+                            <th>Állás megnevezése</th>
+                            <th>Helyszín</th>
+                        </tr>
+                    </thead>
+                </table>
+              </div>
+              <div class="col-lg-6">
+                <div id="descriptionPanel">
+                    <h3 id="panelTitle" class="mb-5 mt-0"></h3>
+                    <p id="panelDescription"></p>
+                </div>
+        
+                <hr class="col-1">
+        
+                <a id="panelLink" href="#" target="_blank" class="btn btn-primary">Jelentkezés / Tovább a hirdetéshez</a>
+              </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var table = $('#example').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.20/i18n/Hungarian.json"
+                },
+                "ajax": {
+                    //"url": "https://faas-fra1-afec6ce7.doserverless.co/api/v1/web/fn-da43d60d-78f3-45f3-a4b3-52dc4ed2fc0f/default/getdataseturl",
+                    "url": "./data/data.json",
+                    "dataSrc": "items"
+                },
+                "initComplete": function(settings, json){
+                    const id = getIDFromURL();
+                    if (id) {
+                        highlightRowById(table, id);
+                    }
+                },
+                "columns": [
+                    { "data": "companyname", 
+                      "render": function(data, type, row) {
+                            // You can format the 'office' column text here
+                            return '<small>' + data + '</small>'; // Example of adding a prefix
+                        }
+                    },
+                    { "data": "title" },
+                    { "data": "address" }
+                ]
+            });
+
+            $('#example tbody').on('click', 'tr', function () {
+                var data = table.row(this).data();
+                $('#panelTitle').text(data.companyname);
+                var htmlContent = marked.parse(data.description);
+                $('#panelDescription').html(htmlContent);
+                $('#panelLink').attr('href', data.url);
+
+                if ($(this).hasClass('highlighted')) {
+                    $(this).removeClass('highlighted');
+                }
+                else {
+                    table.$('tr.highlighted').removeClass('highlighted');
+                    $(this).addClass('highlighted');
+                }
+            });
+        });
+
+        /*function getIDFromURL() {
+            const url = window.location.href;
+            const idPattern = /\/(\d+)$/; // Adjust regex according to your URL pattern
+            const match = url.match(idPattern);
+            return match ? match[1] : null;
+        }*/
+
+        function getIDFromURL() {
+            return window.location.hash.substring(1); // Removes the '#' and returns the rest
+        }
+
+        function highlightRowById(dataTable, id) {
+            let pageIndex = -1;
+            let found = false;
+
+            dataTable.rows().every(function (rowIdx, tableLoop, rowLoop) {
+                const data = this.data();
+                if (data.id == id) { // Assuming 'id' is the field in your data
+                //if(data.title.indexOf(id) !== -1) {
+                    pageIndex = Math.floor(rowLoop / dataTable.page.len());
+                    $(this.node()).addClass('highlighted'); // Add your highlight class
+                    found = true;
+
+                    $('#panelTitle').text(data.companyname);
+                    var htmlContent = marked.parse(data.description);
+                    $('#panelDescription').html(htmlContent);
+                    $('#panelLink').attr('href', data.url);
+
+                    return false; // Stop looping
+                }
+            });
+
+            if (found && pageIndex !== -1) {
+                dataTable.page(pageIndex).draw(false); // Go to the page
+            }
+        }
+    </script>
+</body>
+</html>
