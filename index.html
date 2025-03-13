@@ -144,6 +144,8 @@
                     table.$('tr.highlighted').removeClass('highlighted');
                     $(this).addClass('highlighted');
                 }
+
+                umami.track('click-job', { name: data.companyname + " - " + data.title, id: data.id });
             });
         });
 
