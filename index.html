@@ -148,9 +148,15 @@
                 umami.track('click-job', { name: data.companyname + " - " + data.title, id: data.id });
             });
 
-            $('#example').on('search.dt', function() {
-                var searchTerm = table.search();
-                umami.track('search', { query: searchTerm });
+            var searchTimeout;
+            $('#example').on('search.dt', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    var searchTerm = table.search().trim();
+                    if (searchTerm) {
+                        umami.track('search', { query: searchTerm });
+                    }
+                }, 1000);
             });
         });
 
